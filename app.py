@@ -57,7 +57,7 @@ if vtcs_file and tracking_file and coord_file:
 
             dist = haversine(t['t_lat'], t['t_lon'], c['c_lat'], c['c_lon'])
 
-            if dist <= 0.2:
+            if dist <= 1:
                 results.append([t['vehicle'], c['location']])
 
     # Result DataFrame
