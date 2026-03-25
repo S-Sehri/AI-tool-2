@@ -13,6 +13,24 @@ vtcs_file = st.sidebar.file_uploader("1. Upload VTCS Data", type=['xlsx','csv'])
 tracking_file = st.sidebar.file_uploader("2. Upload Tracking Report", type=['xlsx','csv'])
 coord_file = st.sidebar.file_uploader("3. Upload TCP/WE Coordinates", type=['xlsx','csv'])
 
+def process_audit(vtcs_df, track_df=None):
+    # --- 1. VTCS PROCESSING ---
+    # Weight Conversion
+    cols_to_fix = ['Waste Collected (Kg)', 'Before Weight', 'After Weight (Kg)']
+    for col in cols_to_fix:
+        if col in vtcs_df.columns:
+            vtcs_df[col] = pd.to_numeric(vtcs_df[col].astype(str).str.replace(',', ''), errors='coerce')
+    
+    vtcs_df['Tonnage'] = vtcs_df['Waste Collected (Kg)'] / 1000
+    
+    # Time Conversion (Portal format: Mar 17, 2026, 2:01:12 PM)
+    vtcs_df['Time In'] = pd.to_datetime(vtcs_df['Time In'], errors='coerce')
+    vtcs_df['Time Out'] = pd.to_datetime(vtcs_df['Time Out'], errors='coerce')
+    
+    # 30-Minute Logic (Above 30 is Suspicious)
+    vtcs_df['Duration_Mins'] = (vtcs_df['Time Out'] - vtcs_df['Time In']).dt.total_seconds() / 60
+    vtcs_df['Time_Status'] = vtcs_df['Duration_Mins'].apply(lambda x: "🚨 Suspicious (>30m)" if x > 30 else "✅ Normal")
+
 # Distance formula
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371
